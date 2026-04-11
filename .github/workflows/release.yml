@@ -2,15 +2,6 @@ name: Build & Publish Release APK
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - '**'
-  pull_request:
-    branches:
-      - '**'
-    types:
-      - opened
-      - synchronize
 
 permissions:
   pull-requests: write
@@ -39,7 +30,6 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build Release APK
-        # Added exportLibraryDefinitions to ensure the raw/aboutlibraries resource is generated
         run: ./gradlew exportLibraryDefinitions assembleRelease
         env:
           R34_API_KEY: ${{ secrets.R34_API_KEY }}
@@ -56,13 +46,13 @@ jobs:
     name: Comment on PR
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Find Comment
         uses: peter-evans/find-comment@v4
         id: find-comment
         with:
-          issue-number: ${{ github.event.pull_request.number }}
+          issue-number: ${{ github.event.pull_request.number || github.event.issue.number }}
           comment-author: 'github-actions[bot]'
           body-includes: 'Download Release APK'
 
@@ -70,7 +60,7 @@ jobs:
         uses: peter-evans/create-or-update-comment@v5
         with:
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
+          issue-number: ${{ github.event.pull_request.number || github.event.issue.number }}
           body: |
             ### Build Success! 🚀
             [Download Release APK](${{ needs.build.outputs.artifact_url }})
