@@ -563,6 +563,28 @@ fun PreferencesScreen(navController: NavHostController) {
                             storageLocationPromptLaunched = true
                         }
                     }
+                    item {
+                        SwitchPref(
+                            checked = currentSettings.useGumletProxy,
+                            title = "Image proxy (Gumlet)",
+                            summary = "Route all images through the Gumlet CDN for automatic WebP " +
+                                      "transcoding and compression. Applies to both streaming and " +
+                                      "downloads. Configure quality on your Gumlet dashboard.",
+                            infoText = "When enabled, every image request is rewritten to pass " +
+                                       "through ero2.gumlet.io/fetch/... before being delivered.\n\n" +
+                                       "This transcodes images to WebP on-the-fly, reducing data " +
+                                       "usage without visible quality loss.\n\n" +
+                                       "Video files are never proxied. You must have a Gumlet " +
+                                       "account with a Fetch source configured at ero2.gumlet.io."
+                        ) {
+                            scope.launch {
+                                preferencesRepository.updatePref(
+                                    PreferenceKeys.USE_GUMLET_PROXY,
+                                    it
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
