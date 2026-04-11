@@ -30,7 +30,9 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build Release APK
-        run: ./gradlew exportLibraryDefinitions assembleRelease
+        # We removed "exportLibraryDefinitions" because the Android plugin 
+        # handles it automatically during assembleRelease in v14+.
+        run: ./gradlew assembleRelease
         env:
           R34_API_KEY: ${{ secrets.R34_API_KEY }}
           R34_API_KEY_DEBUG: ${{ secrets.R34_API_KEY_DEBUG }}
