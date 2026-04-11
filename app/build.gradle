@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.aboutlibraries)
 }
 
-
 Properties properties = new Properties()
 if (rootProject.file("local.properties").exists()) {
     properties.load(rootProject.file("local.properties").newDataInputStream())
@@ -15,6 +14,16 @@ if (rootProject.file("local.properties").exists()) {
 android {
     namespace 'moe.apex.breadboard'
     compileSdk 36
+
+    // Explicitly define signingConfigs so 'release' can borrow 'debug'
+    signingConfigs {
+        debug {
+            storeFile file(System.getProperty("user.home") + "/.android/debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+    }
 
     defaultConfig {
         applicationId "moe.apex.breadboard"
@@ -36,7 +45,10 @@ android {
             minifyEnabled true
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            
+            // Use the debug config defined above to bypass release signing requirements
             signingConfig signingConfigs.debug
+            
             buildConfigField "String", "R34_API_KEY", properties.getProperty("R34_API_KEY", "\"\"")
         }
         debug {
@@ -63,6 +75,11 @@ android {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
         }
     }
+}
+
+// FIX: This generates the 'raw.libraries' reference needed by LibrariesScreen.kt
+aboutLibraries {
+    registerAndroidTasks = true
 }
 
 dependencies {
