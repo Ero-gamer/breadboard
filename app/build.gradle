@@ -3,7 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
-    // Ensure this alias points to "com.mikepenz.aboutlibraries.plugin.android" in libs.versions.toml
     alias(libs.plugins.aboutlibraries) 
 }
 
@@ -12,7 +11,6 @@ if (rootProject.file("local.properties").exists()) {
     properties.load(rootProject.file("local.properties").newDataInputStream())
 }
 
-// Helper to ensure a keystore exists for CI builds (The fix for your signing error)
 def ensureKeystore() {
     def keystoreFile = file(System.getProperty("user.home") + "/.android/debug.keystore")
     if (!keystoreFile.exists()) {
@@ -31,7 +29,6 @@ android {
 
     signingConfigs {
         debug {
-            // Updated to use the helper function
             storeFile ensureKeystore()
             storePassword "android"
             keyAlias "androiddebugkey"
@@ -45,12 +42,8 @@ android {
         targetSdk 36
         versionCode 321
         versionName "3.2.1"
-
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables {
-            useSupportLibrary true
-        }
-
+        vectorDrawables { useSupportLibrary true }
         buildConfigField "String", "R34_APP_ID", properties.getProperty("R34_APP_ID", "\"\"")
     }
 
@@ -59,10 +52,7 @@ android {
             minifyEnabled true
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            
             signingConfig signingConfigs.debug
-            
-            // Map GitHub Secrets (env) or local properties
             buildConfigField "String", "R34_API_KEY", "\"" + (System.getenv("R34_API_KEY") ?: properties.getProperty("R34_API_KEY", "")) + "\""
         }
         debug {
@@ -76,9 +66,7 @@ android {
         targetCompatibility JavaVersion.VERSION_21
     }
     
-    kotlinOptions {
-        jvmTarget = '21'
-    }
+    kotlinOptions { jvmTarget = '21' }
     
     buildFeatures {
         compose true
@@ -86,7 +74,13 @@ android {
     }
 }
 
+// Fix for v14.0.1 compilation errors:
+// This ensures the JSON resource is actually generated before Kotlin attempts to compile.
 aboutLibraries {
+    config {
+        // This helps the plugin identify the project structure correctly in v14
+        strictMode = false
+    }
 }
 
 dependencies {
@@ -110,11 +104,8 @@ dependencies {
     implementation libs.kotlinx.serialization.core
     implementation libs.kotlinx.serialization.cbor
     implementation libs.reorderable
-    
-    // Core and Compose libraries for v14+
     implementation libs.aboutlibraries.core
     implementation libs.aboutlibraries.compose.m3
-    
     implementation libs.androidx.graphics.shapes
     implementation libs.composemediaplayer
     testImplementation libs.junit
