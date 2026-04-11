@@ -1,6 +1,7 @@
 name: Build & Publish Release APK
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - '**'
@@ -38,9 +39,9 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build Release APK
-        run: ./gradlew assembleRelease
+        # Added exportLibraryDefinitions to ensure the raw/aboutlibraries resource is generated
+        run: ./gradlew exportLibraryDefinitions assembleRelease
         env:
-          # Injects your GitHub Secrets into the build process
           R34_API_KEY: ${{ secrets.R34_API_KEY }}
           R34_API_KEY_DEBUG: ${{ secrets.R34_API_KEY_DEBUG }}
 
