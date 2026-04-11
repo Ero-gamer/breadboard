@@ -12,13 +12,27 @@ if (rootProject.file("local.properties").exists()) {
     properties.load(rootProject.file("local.properties").newDataInputStream())
 }
 
+// Helper to ensure a keystore exists for CI builds (The fix for your signing error)
+def ensureKeystore() {
+    def keystoreFile = file(System.getProperty("user.home") + "/.android/debug.keystore")
+    if (!keystoreFile.exists()) {
+        keystoreFile.parentFile.mkdirs()
+        exec {
+            executable "keytool"
+            args "-genkey", "-v", "-keystore", keystoreFile, "-storepass", "android", "-alias", "androiddebugkey", "-keypass", "android", "-keyalg", "RSA", "-keysize", "2048", "-validity", "10000", "-dname", "CN=Android Debug,O=Android,C=US"
+        }
+    }
+    return keystoreFile
+}
+
 android {
     namespace 'moe.apex.breadboard'
     compileSdk 36
 
     signingConfigs {
         debug {
-            storeFile file(System.getProperty("user.home") + "/.android/debug.keystore")
+            // Updated to use the helper function
+            storeFile ensureKeystore()
             storePassword "android"
             keyAlias "androiddebugkey"
             keyPassword "android"
@@ -48,11 +62,12 @@ android {
             
             signingConfig signingConfigs.debug
             
-            buildConfigField "String", "R34_API_KEY", properties.getProperty("R34_API_KEY", "\"\"")
+            // Map GitHub Secrets (env) or local properties
+            buildConfigField "String", "R34_API_KEY", "\"" + (System.getenv("R34_API_KEY") ?: properties.getProperty("R34_API_KEY", "")) + "\""
         }
         debug {
             applicationIdSuffix ".debug"
-            buildConfigField "String", "R34_API_KEY", properties.getProperty("R34_API_KEY_DEBUG", "\"\"")
+            buildConfigField "String", "R34_API_KEY", "\"" + (System.getenv("R34_API_KEY_DEBUG") ?: properties.getProperty("R34_API_KEY_DEBUG", "")) + "\""
         }
     }
     
@@ -71,9 +86,6 @@ android {
     }
 }
 
-// aboutLibraries v14+: the nested config{} block no longer exists.
-// Tasks are auto-registered by the plugin. Remove this block entirely
-// or keep it empty — either is valid.
 aboutLibraries {
 }
 
