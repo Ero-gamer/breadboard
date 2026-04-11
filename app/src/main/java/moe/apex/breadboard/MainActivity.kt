@@ -28,6 +28,10 @@ import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import coil3.gif.AnimatedImageDecoder
 import coil3.gif.GifDecoder
+import coil3.network.okhttp.OkHttpNetworkFetcherFactory
+import moe.apex.breadboard.util.GumletProxyInterceptor
+import okhttp3.OkHttpClient
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import moe.apex.breadboard.navigation.Favourites
@@ -52,8 +56,13 @@ class MainActivity : SingletonImageLoader.Factory, ComponentActivity(), VolumeBu
     override var volumeUpPressedCallback: (() -> Boolean)? = null
 
     override fun newImageLoader(context: PlatformContext): ImageLoader {
+        val gumletInterceptor = GumletProxyInterceptor()
+        val coilOkHttp = OkHttpClient.Builder()
+            .addNetworkInterceptor(gumletInterceptor)
+            .build()
         return ImageLoader.Builder(context)
             .components {
+                add(OkHttpNetworkFetcherFactory(callFactory = { coilOkHttp }))
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     add(AnimatedImageDecoder.Factory())
                 } else {
@@ -112,6 +121,11 @@ class MainActivity : SingletonImageLoader.Factory, ComponentActivity(), VolumeBu
                 ) {
                     viewModel.setRecommendationsProvider(null)
                 }
+            }
+
+            // Keep GumletProxyInterceptor in sync with the user's preference.
+            LaunchedEffect(prefs.useGumletProxy) {
+                GumletProxyInterceptor.isEnabled = prefs.useGumletProxy
             }
 
             CompositionLocalProvider(LocalPreferences provides prefs) {
