@@ -84,6 +84,7 @@ android {
 }
 
 aboutLibraries {
+    // Keep this empty for v14+
 }
 
 dependencies {
