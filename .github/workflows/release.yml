@@ -39,13 +39,16 @@ jobs:
 
       - name: Build Release APK
         run: ./gradlew assembleRelease
+        env:
+          # Injects your GitHub Secrets into the build process
+          R34_API_KEY: ${{ secrets.R34_API_KEY }}
+          R34_API_KEY_DEBUG: ${{ secrets.R34_API_KEY_DEBUG }}
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v7
         id: upload-apk
         with:
           name: breadboard-release
-          # Use wildcard to find the APK regardless of 'signed' or 'unsigned' naming
           path: app/build/outputs/apk/release/*.apk
 
   comment:
