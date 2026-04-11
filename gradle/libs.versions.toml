@@ -1,5 +1,5 @@
 [versions]
-android-gradle-plugin = "8.11.1"
+android-gradle-plugin = "9.1.0"
 kotlin = "2.3.20"
 aboutlibraries = "14.0.1"
 compose-compiler = "1.5.18"
