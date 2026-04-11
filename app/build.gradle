@@ -71,15 +71,10 @@ android {
     }
 }
 
-// FIX for v14.0.1: registerAndroidTasks is gone. 
-// The plugin now uses this block to configure the generation.
+// aboutLibraries v14+: the nested config{} block no longer exists.
+// Tasks are auto-registered by the plugin. Remove this block entirely
+// or keep it empty — either is valid.
 aboutLibraries {
-    // If you are using version catalogs, ensure the plugin is applied to the project.
-    // In v14+, the tasks are auto-registered. 
-    // This empty block is often enough to trigger the default generation logic.
-    config {
-        strictMode = false
-    }
 }
 
 dependencies {
