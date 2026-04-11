@@ -30,9 +30,8 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build Release APK
-        # We removed "exportLibraryDefinitions" because the Android plugin 
-        # handles it automatically during assembleRelease in v14+.
-        run: ./gradlew assembleRelease
+        # Explicitly running the Release export task fixes the "Unresolved reference 'raw'" error
+        run: ./gradlew :app:exportLibraryDefinitionsRelease assembleRelease
         env:
           R34_API_KEY: ${{ secrets.R34_API_KEY }}
           R34_API_KEY_DEBUG: ${{ secrets.R34_API_KEY_DEBUG }}
