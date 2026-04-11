@@ -22,6 +22,7 @@ import kotlinx.coroutines.withContext
 import moe.apex.breadboard.image.Image
 import moe.apex.breadboard.preferences.PreferenceKeys
 import moe.apex.breadboard.prefs
+import moe.apex.breadboard.util.GumletProxyInterceptor
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
@@ -94,7 +95,9 @@ fun StorageLocationSelection(
     }
 }
 
-private val client = OkHttpClient()
+private val client = OkHttpClient.Builder()
+    .addNetworkInterceptor(GumletProxyInterceptor())
+    .build()
 
 
 private suspend fun downloadToStream(image: Image, outputStream: OutputStream): Result<Unit> {
