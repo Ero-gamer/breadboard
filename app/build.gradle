@@ -3,7 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.aboutlibraries)
+    // Ensure this alias points to "com.mikepenz.aboutlibraries.plugin.android" in libs.versions.toml
+    alias(libs.plugins.aboutlibraries) 
 }
 
 Properties properties = new Properties()
@@ -15,7 +16,6 @@ android {
     namespace 'moe.apex.breadboard'
     compileSdk 36
 
-    // Explicitly define signingConfigs so 'release' can borrow 'debug'
     signingConfigs {
         debug {
             storeFile file(System.getProperty("user.home") + "/.android/debug.keystore")
@@ -46,7 +46,6 @@ android {
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             
-            // Use the debug config defined above to bypass release signing requirements
             signingConfig signingConfigs.debug
             
             buildConfigField "String", "R34_API_KEY", properties.getProperty("R34_API_KEY", "\"\"")
@@ -56,30 +55,31 @@ android {
             buildConfigField "String", "R34_API_KEY", properties.getProperty("R34_API_KEY_DEBUG", "\"\"")
         }
     }
+    
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_21
         targetCompatibility JavaVersion.VERSION_21
     }
+    
     kotlinOptions {
         jvmTarget = '21'
     }
+    
     buildFeatures {
         compose true
         buildConfig true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion libs.versions.compose.compiler.get()
-    }
-    packagingOptions {
-        resources {
-            excludes += '/META-INF/{AL2.0,LGPL2.1}'
-        }
-    }
 }
 
-// FIX: This generates the 'raw.libraries' reference needed by LibrariesScreen.kt
+// FIX for v14.0.1: registerAndroidTasks is gone. 
+// The plugin now uses this block to configure the generation.
 aboutLibraries {
-    registerAndroidTasks = true
+    // If you are using version catalogs, ensure the plugin is applied to the project.
+    // In v14+, the tasks are auto-registered. 
+    // This empty block is often enough to trigger the default generation logic.
+    config {
+        strictMode = false
+    }
 }
 
 dependencies {
@@ -103,8 +103,11 @@ dependencies {
     implementation libs.kotlinx.serialization.core
     implementation libs.kotlinx.serialization.cbor
     implementation libs.reorderable
+    
+    // Core and Compose libraries for v14+
     implementation libs.aboutlibraries.core
     implementation libs.aboutlibraries.compose.m3
+    
     implementation libs.androidx.graphics.shapes
     implementation libs.composemediaplayer
     testImplementation libs.junit
