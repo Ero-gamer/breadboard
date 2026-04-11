@@ -3,7 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
-    // Ensure this alias points to "com.mikepenz.aboutlibraries.plugin.android" in libs.versions.toml
     alias(libs.plugins.aboutlibraries) 
 }
 
@@ -12,7 +11,7 @@ if (rootProject.file("local.properties").exists()) {
     properties.load(rootProject.file("local.properties").newDataInputStream())
 }
 
-// Helper to ensure a keystore exists for CI builds
+// Fixed signing for GitHub Actions runner
 def ensureKeystore() {
     def keystoreFile = file(System.getProperty("user.home") + "/.android/debug.keystore")
     if (!keystoreFile.exists()) {
@@ -84,9 +83,6 @@ android {
     }
 }
 
-// aboutLibraries v14+: the nested config{} block no longer exists.
-// Tasks are auto-registered by the plugin. Remove this block entirely
-// or keep it empty — either is valid.
 aboutLibraries {
 }
 
@@ -112,7 +108,6 @@ dependencies {
     implementation libs.kotlinx.serialization.cbor
     implementation libs.reorderable
     
-    // Core and Compose libraries for v14+
     implementation libs.aboutlibraries.core
     implementation libs.aboutlibraries.compose.m3
     
