@@ -30,7 +30,8 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build Release APK
-        # Explicitly running the Release export task fixes the "Unresolved reference 'raw'" error
+        # Explicitly call the Release export task to generate R.raw.aboutlibraries 
+        # so the Kotlin compiler finds it during assembleRelease.
         run: ./gradlew :app:exportLibraryDefinitionsRelease assembleRelease
         env:
           R34_API_KEY: ${{ secrets.R34_API_KEY }}
