@@ -41,11 +41,12 @@ jobs:
         run: ./gradlew assembleRelease
 
       - name: Upload Release APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         id: upload-apk
         with:
-          name: breadboard-release.apk
-          path: app/build/outputs/apk/release/app-release-unsigned.apk
+          name: breadboard-release
+          # Use wildcard to find the APK regardless of 'signed' or 'unsigned' naming
+          path: app/build/outputs/apk/release/*.apk
 
   comment:
     name: Comment on PR
@@ -54,7 +55,7 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: Find Comment
-        uses: peter-evans/find-comment@v4
+        uses: peter-evans/find-comment@v3
         id: find-comment
         with:
           issue-number: ${{ github.event.pull_request.number }}
