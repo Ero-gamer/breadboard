@@ -309,18 +309,27 @@ fun PreferencesScreen(navController: NavHostController) {
                     }
                     item {
                         val authType = currentSettings.imageSource.imageBoard.apiKeyRequirement
+                        // R34 is always enabled: the built-in key is encrypted for the official
+                        // signing cert and fails on custom/sideloaded builds. Users need to
+                        // be able to enter their own key regardless of apiKeyRequirement.
+                        val canSetKey = authType != ImageBoardRequirement.NOT_NEEDED ||
+                                        currentSettings.imageSource == ImageSource.R34
                         TitleSummary(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .animateContentSize(),
                             title = "Set API key",
-                            summary = if (authType != ImageBoardRequirement.NOT_NEEDED) {
-                                "${currentSettings.imageSource.label} requires an API key${if (authType == ImageBoardRequirement.RECOMMENDED) " for the best experience." else "."} " +
-                                "Tap to set."
-                            } else {
-                                "${currentSettings.imageSource.label} does not require an API key."
+                            summary = when {
+                                currentSettings.imageSource == ImageSource.R34 ->
+                                    "Rule34 requires an API key to load images. " +
+                                    "Tap to set your personal key from rule34.xxx account settings."
+                                authType != ImageBoardRequirement.NOT_NEEDED ->
+                                    "${currentSettings.imageSource.label} requires an API key${if (authType == ImageBoardRequirement.RECOMMENDED) " for the best experience." else "."} " +
+                                    "Tap to set."
+                                else ->
+                                    "${currentSettings.imageSource.label} does not require an API key."
                             },
-                            enabled = authType != ImageBoardRequirement.NOT_NEEDED
+                            enabled = canSetKey
                         ) {
                             showAuthDialog = true
                         }
@@ -513,6 +522,22 @@ fun PreferencesScreen(navController: NavHostController) {
                         }
                     }
                     item {
+                        EnumPref(
+                            title = "Dark theme",
+                            summary = currentSettings.darkThemeMode.label,
+                            enumItems = DarkThemeMode.entries,
+                            selectedItem = currentSettings.darkThemeMode,
+                            onSelection = {
+                                scope.launch {
+                                    preferencesRepository.updatePref(
+                                        PreferenceKeys.DARK_THEME_MODE,
+                                        it
+                                    )
+                                }
+                            }
+                        )
+                    }
+                    item {
                         ReorderablePref(
                             title = "Reorder image actions",
                             dialogTitle = "Image actions",
@@ -571,11 +596,11 @@ fun PreferencesScreen(navController: NavHostController) {
                                       "transcoding and compression. Applies to both streaming and " +
                                       "downloads. Configure quality on your Gumlet dashboard.",
                             infoText = "When enabled, every image request is rewritten to pass " +
-                                       "through gumlet.io/fetch/... before being delivered " +
+                                       "through ero2.gumlet.io/fetch/... before being delivered.\n\n" +
                                        "This transcodes images to WebP on-the-fly, reducing data " +
-                                       "usage without visible quality loss " +
+                                       "usage without visible quality loss.\n\n" +
                                        "Video files are never proxied. You must have a Gumlet " +
-                                       "account with a Fetch source configured at gumlet.io."
+                                       "account with a Fetch source configured at ero2.gumlet.io."
                         ) {
                             scope.launch {
                                 preferencesRepository.updatePref(
