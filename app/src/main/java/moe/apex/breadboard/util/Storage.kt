@@ -96,7 +96,7 @@ fun StorageLocationSelection(
 }
 
 private val client = OkHttpClient.Builder()
-    .addNetworkInterceptor(GumletProxyInterceptor())
+    .addInterceptor(GumletProxyInterceptor())
     .build()
 
 
