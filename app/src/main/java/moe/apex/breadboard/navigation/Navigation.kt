@@ -54,6 +54,9 @@ import moe.apex.breadboard.preferences.IgnoredTagsScreen
 import moe.apex.breadboard.preferences.LibrariesScreen
 import moe.apex.breadboard.preferences.PreferencesScreen
 import moe.apex.breadboard.preferences.RecommendationsSettingsScreen
+import androidx.compose.foundation.isSystemInDarkTheme
+import moe.apex.breadboard.preferences.DarkThemeMode
+import moe.apex.breadboard.preferences.LocalPreferences
 import moe.apex.breadboard.ui.theme.BreadboardTheme
 import moe.apex.breadboard.util.withoutVertical
 
@@ -93,7 +96,13 @@ fun Navigation(navController: NavHostController, startDestination: Any = Search)
         }
     }
 
-    BreadboardTheme {
+    val prefs = LocalPreferences.current
+    val darkTheme = when (prefs.darkThemeMode) {
+        DarkThemeMode.DARK -> true
+        DarkThemeMode.LIGHT -> false
+        DarkThemeMode.SYSTEM -> isSystemInDarkTheme()
+    }
+    BreadboardTheme(darkTheme = darkTheme) {
         Surface {
             Scaffold(
                 bottomBar = {
