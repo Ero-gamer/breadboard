@@ -98,6 +98,7 @@ data object PrefNames {
     const val AUTOPLAY_VIDEOS = "autoplay_videos"
     const val UNIFIED_INFO_SHEET = "unified_info_sheet"
     const val USE_GUMLET_PROXY = "use_gumlet_proxy"
+    const val DARK_THEME_MODE = "dark_theme_mode"
 }
 
 
@@ -133,6 +134,7 @@ object PreferenceKeys {
     val AUTOPLAY_VIDEOS = stringPreferencesKey(PrefNames.AUTOPLAY_VIDEOS)
     val UNIFIED_INFO_SHEET = booleanPreferencesKey(PrefNames.UNIFIED_INFO_SHEET)
     val USE_GUMLET_PROXY = booleanPreferencesKey(PrefNames.USE_GUMLET_PROXY)
+    val DARK_THEME_MODE = stringPreferencesKey(PrefNames.DARK_THEME_MODE)
 }
 
 
@@ -185,6 +187,13 @@ enum class AutoplayVideosMode(override val label: String) : PrefEnum<AutoplayVid
     OFF("Never"),
     AUTO("When data saver is inactive")
 }
+enum class DarkThemeMode(override val label: String) : PrefEnum<DarkThemeMode> {
+    SYSTEM("Follow system"),
+    DARK("Always dark"),
+    LIGHT("Always light")
+}
+
+
 
 enum class Experiment(override val label: String, val description: String? = null) : PrefEnum<Experiment> {
     ALWAYS_ANIMATE_SCROLL("Always animate scroll-to-top", "Enable smooth scrolling on all pages when using the scroll-to-top button."),
@@ -231,7 +240,8 @@ data class Prefs(
     val internalIgnoreList: Set<String>,
     val autoplayVideos: AutoplayVideosMode,
     val unifiedInfoSheet: Boolean,
-    val useGumletProxy: Boolean
+    val useGumletProxy: Boolean,
+    val darkThemeMode: DarkThemeMode
 ) {
     companion object {
         val DEFAULT = Prefs(
@@ -266,6 +276,7 @@ data class Prefs(
             autoplayVideos = AutoplayVideosMode.OFF,
             unifiedInfoSheet = false, // Unified is called 'Classic' in the UI
             useGumletProxy = false,
+            darkThemeMode = DarkThemeMode.SYSTEM,
         )
     }
 
@@ -278,7 +289,20 @@ data class Prefs(
 
     fun authFor(source: ImageSource, context: Context): ImageBoardAuth? {
         if (source == ImageSource.R34) {
-            return ImageBoardAuth(BuildConfig.R34_APP_ID, SecretsManager.getApiKey(context)!!)
+            // Prefer a user-supplied API key stored in preferences (allows custom builds
+            // and sideloaded APKs to authenticate without the encrypted built-in key).
+            val userKey = imageBoardAuths[source]
+            if (userKey != null) return userKey
+
+            // Fall back to the built-in key encrypted for the official signing cert.
+            val builtInKey = SecretsManager.getApiKey(context)
+            if (!builtInKey.isNullOrEmpty()) {
+                return ImageBoardAuth(BuildConfig.R34_APP_ID, builtInKey)
+            }
+
+            // No valid key available — send unauthenticated request rather than
+            // sending empty credentials which Rule34 rejects with no results.
+            return null
         }
         return imageBoardAuths[source]
     }
@@ -330,7 +354,8 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
             PreferenceKeys.INTERNAL_IGNORE_LIST_TIMESTAMP to PrefMeta(PrefCategory.SETTING, exportable = false),
             PreferenceKeys.INTERNAL_IGNORE_LIST to PrefMeta(PrefCategory.SETTING, exportable = false),
             PreferenceKeys.UNIFIED_INFO_SHEET to PrefMeta(PrefCategory.SETTING),
-            PreferenceKeys.USE_GUMLET_PROXY to PrefMeta(PrefCategory.SETTING)
+            PreferenceKeys.USE_GUMLET_PROXY to PrefMeta(PrefCategory.SETTING),
+            PreferenceKeys.DARK_THEME_MODE to PrefMeta(PrefCategory.SETTING)
         )
     }
 
@@ -486,19 +511,10 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
             }
         }
 
-        /* Version 3.0.5 added support for specifying a key for R34 as unauthenticated requests
-           started being blocked. Since then, Breadboard has been granted an unlimited R34 API key.
-           As a result, we no longer need to store personal API keys from the user for R34. */
-        if (lastUsedVersionCode in 305 .. 306) {
-            val data = dataStore.data.first()
-            val auths = data[PreferenceKeys.IMAGE_BOARD_AUTHS]
-            if (auths != null) {
-                val decodedAuths: Map<ImageSource, ImageBoardAuth> = Cbor.decodeFromByteArray(auths)
-                if (decodedAuths[ImageSource.R34] != null) {
-                    setAuth(ImageSource.R34, null, null)
-                }
-            }
-        }
+        /* Version 3.0.5 stripped user-stored R34 keys as the app had a built-in one.
+           That built-in key is encrypted with the official signing cert and fails on
+           custom builds. We now keep user keys so sideloaders can authenticate. */
+        // Migration removed intentionally — user R34 keys are preserved.
 
         /* Version 3.1.0 changes experiments to be a set rather than individual Pref items.
            Migrate the old "search pull to refresh" and "always animate scroll to top" settings
@@ -814,6 +830,7 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
         val autoplayVideos = preferences[PreferenceKeys.AUTOPLAY_VIDEOS]?.let { AutoplayVideosMode.valueOf(it) } ?: Prefs.DEFAULT.autoplayVideos
         val unifiedInfoSheet = preferences[PreferenceKeys.UNIFIED_INFO_SHEET] ?: Prefs.DEFAULT.unifiedInfoSheet
         val useGumletProxy = preferences[PreferenceKeys.USE_GUMLET_PROXY] ?: Prefs.DEFAULT.useGumletProxy
+        val darkThemeMode = preferences[PreferenceKeys.DARK_THEME_MODE]?.let { DarkThemeMode.valueOf(it) } ?: Prefs.DEFAULT.darkThemeMode
 
         return Prefs(
             dataSaver,
@@ -846,7 +863,8 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
             internalIgnoreList,
             autoplayVideos,
             unifiedInfoSheet,
-            useGumletProxy
+            useGumletProxy,
+            darkThemeMode
         )
     }
 }
