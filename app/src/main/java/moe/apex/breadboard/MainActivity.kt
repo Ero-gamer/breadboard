@@ -58,7 +58,7 @@ class MainActivity : SingletonImageLoader.Factory, ComponentActivity(), VolumeBu
     override fun newImageLoader(context: PlatformContext): ImageLoader {
         val gumletInterceptor = GumletProxyInterceptor()
         val coilOkHttp = OkHttpClient.Builder()
-            .addNetworkInterceptor(gumletInterceptor)
+            .addInterceptor(gumletInterceptor)
             .build()
         return ImageLoader.Builder(context)
             .components {
