@@ -1,0 +1,75 @@
+name: Build & Publish Release APK v2
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - '**'
+    types:
+      - opened
+      - synchronize
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  build:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+    outputs:
+      artifact_url: ${{ steps.upload-apk.outputs.artifact-url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+          cache: gradle
+
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew
+
+      - name: Build Release APK
+        # assembleRelease is enough — the AboutLibraries v11 plugin automatically
+        # hooks its JSON generation task into the resource pipeline before compilation.
+        run: ./gradlew assembleRelease
+        env:
+          R34_API_KEY: ${{ secrets.R34_API_KEY }}
+          R34_API_KEY_DEBUG: ${{ secrets.R34_API_KEY_DEBUG }}
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        id: upload-apk
+        with:
+          name: breadboard-release
+          path: app/build/outputs/apk/release/*.apk
+
+  comment:
+    name: Comment on PR
+    needs: build
+    runs-on: ubuntu-latest
+    # Only runs on pull_request events — workflow_dispatch has no PR to comment on
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Find existing bot comment
+        uses: peter-evans/find-comment@v3
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: 'Download Release APK'
+
+      - name: Add or update PR comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### Build Success! 🚀
+            [Download Release APK](${{ needs.build.outputs.artifact_url }})
+          edit-mode: replace
