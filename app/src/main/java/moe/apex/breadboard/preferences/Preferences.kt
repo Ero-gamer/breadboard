@@ -596,11 +596,11 @@ fun PreferencesScreen(navController: NavHostController) {
                                       "transcoding and compression. Applies to both streaming and " +
                                       "downloads. Configure quality on your Gumlet dashboard.",
                             infoText = "When enabled, every image request is rewritten to pass " +
-                                       "through ero2.gumlet.io/fetch/... before being delivered.\n\n" +
+                                       "through gumlet.io/fetch/... before being delivered " +
                                        "This transcodes images to WebP on-the-fly, reducing data " +
-                                       "usage without visible quality loss.\n\n" +
+                                       "usage without visible quality loss " +
                                        "Video files are never proxied. You must have a Gumlet " +
-                                       "account with a Fetch source configured at ero2.gumlet.io."
+                                       "account with a Fetch source configured at gumlet.io."
                         ) {
                             scope.launch {
                                 preferencesRepository.updatePref(
